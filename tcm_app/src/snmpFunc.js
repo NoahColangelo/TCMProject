@@ -11,9 +11,9 @@ session.version = snmp.Version2c;
 var oids = ["1.3.6.1.2.1.1.3.0",// server upTime
             "1.3.6.1.2.1.25.1.1.0",// system upTime
             "1.3.6.1.2.1.25.1.2.0",// Local Date and Time
-            "1.3.6.1.2.1.25.2.3.1.5.101",// total available memory
-            "1.3.6.1.2.1.25.2.3.1.6.101",//current memory usage
-            "1.3.6.1.2.1.25.4.2.1.3"];// CPU usage%
+            "1.3.6.1.4.1.2021.4.5",// total available memory WIP
+            "1.3.6.1.2.1.25.2.3.1.6.101",//current memory usage WIP
+            "1.3.6.1.2.1.25.4.2.1.3"];// CPU usage% WIP
 
 let sysUpTimeSeconds = 0;
 let compUpTimeSeconds = 0;
