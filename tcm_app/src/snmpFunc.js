@@ -25,7 +25,6 @@ var infoSend = [];
 servercall();
 console.log(infoSend);
 
-let Info = 32; export default Info;
 
 function servercall()
 {
