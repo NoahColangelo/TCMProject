@@ -1,6 +1,7 @@
-const { waitFor } = require('@testing-library/react');
 const {MongoClient} = require('mongodb');
 var snmp = require ("net-snmp");
+const express = require('express');
+const cors = require('cors');
 
 //Mongo Variables
 const url = "mongodb+srv://Noah:BongoMongo321@tcmcluster.wmrfz.mongodb.net/TCM_Data?retryWrites=true&w=majority";
@@ -20,15 +21,33 @@ var oids = ["1.3.6.1.2.1.1.3.0",// server upTime
             "1.3.6.1.4.1.2021.4.6.0",//current memory usage
             "1.3.6.1.4.1.2021.11.9.0"];// CPU usage%
 
-//let servUpTimeSeconds = 0;
-//let compUpTimeSeconds = 0;
-//let buf1;
-//let localDateTime;
-//let memUsage = 0;
-//let cpuUsage = 0;
-
 var infoSend = [];
 //------------------
+
+
+const app = express();
+app.use(cors());
+const port = process.env.port || 3001;
+
+
+
+app.listen(port, () => {
+    console.log('app listening on port: ' + port);
+});
+
+app.get("/A", (req, res) => {
+    res.send({ServerUpTime: infoSend.servUpTimeSeconds,
+              SystemUpTime: infoSend.compUpTimeSeconds,
+              LocalDate: infoSend.localDateTime,
+              MemoryUsage: infoSend.memUsage,
+              CPU_Usage: infoSend.cpuUsage});
+    console.log('sent data');
+});
+
+app.get("/B", (req, res) => {
+    res.send("Hello World");
+    console.log('sent data');
+});
 
 main();
 setInterval(main, 60000);
@@ -108,15 +127,15 @@ function serverCall()
                 CPU_Usage: infoSend.cpuUsage
     
             });
+
+
         //session.close();
     });
-
-    //return(infoSend);
 }
 
 function createNewDocument(client, newDocument)
 {
     const result = client.db("TCM_Data").collection("system_stats").insertOne(newDocument);
     console.log(`New listing created with the following id: ${result.insertedId}`);
-    //console.log(newDocument);
+    console.log(newDocument);
 }
