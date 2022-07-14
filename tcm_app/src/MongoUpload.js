@@ -29,7 +29,7 @@ const app = express();
 app.use(cors());
 const port = process.env.port || 3001;
 
-
+var data = undefined;
 
 app.listen(port, () => {
     console.log('app listening on port: ' + port);
@@ -45,16 +45,18 @@ app.get("/A", (req, res) => {
 });
 
 app.get("/B", (req, res) => {
-    res.send("Hello World");
-    console.log('sent data');
+    RetreiveDocuments(client, 5);
+    //console.log(data);
+    res.json(data);
+    console.log('sent array of data');
 });
 
+RetreiveDocuments(client, 5);//calls it before to fill data
 main();
 setInterval(main, 60000);
 
 function main()
 {
-
     serverCall();
 }
 
@@ -116,7 +118,6 @@ function serverCall()
                 }
             }
         }
-        //onsole.log(infoSend);
 
         createNewDocument(client, 
             {
@@ -135,7 +136,14 @@ function serverCall()
 
 function createNewDocument(client, newDocument)
 {
-    const result = client.db("TCM_Data").collection("system_stats").insertOne(newDocument);
-    console.log(`New listing created with the following id: ${result.insertedId}`);
+    const cursor = client.db("TCM_Data").collection("system_stats").insertOne(newDocument);
+    console.log(`New listing created with the following id: ${cursor.insertedId}`);
     console.log(newDocument);
+}
+
+async function RetreiveDocuments(client, numOfDocs, dbIndex = 0)
+{
+    const cursor= client.db("TCM_Data").collection("system_stats").find().limit(numOfDocs).skip(dbIndex);
+    data = await cursor.toArray();
+    //return results;
 }

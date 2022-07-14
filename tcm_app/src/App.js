@@ -61,8 +61,8 @@ render()
         <p> ServerUpTime: {this.state.ServerUpTime} </p>
         <p> SystemUpTime: {this.state.SystemUpTime} </p>
         <p> Local Date/Time: {this.state.LocalDate} </p>
-        <p> Memory Usage %: {this.state.MemoryUsage} </p>
-        <p> CPU Usage %: {this.state.CPU_Usage} </p>
+        <p> Memory Usage: {this.state.MemoryUsage}% </p>
+        <p> CPU Usage: {this.state.CPU_Usage}% </p>
       </header>
     </div>
   );
