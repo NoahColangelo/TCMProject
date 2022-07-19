@@ -2,6 +2,9 @@ import React from 'react';
 import logo from './logo.svg';
 import './App.css';
 
+//import * as React from 'react';
+import {DataGrid} from '@mui/x-data-grid';
+
 class App extends React.Component
 {
 
@@ -18,7 +21,8 @@ class App extends React.Component
 
   componentDidMount()
   {
-    //this.RetreiveB();
+    this.RetreiveB();
+    //this.FillRows();
     this.RetreiveData();
     this.requestTimer = setInterval(() => {this.RetreiveData();}, 60000);
   }
@@ -39,34 +43,67 @@ class App extends React.Component
     this.state.CPU_Usage = json.CPU_Usage;
 
     this.setState({state: this.state});
-    console.log(json);
+    //console.log(json);
     return json;
   }
 
+  rows = [];
+
   RetreiveB = async () => {
-    const res = await fetch('http://localhost:3001/A');
-    const json = await res.json();
-    console.log(json);
+    const res = await fetch('http://localhost:3001/B');
+    this.rows = await res.json();
+
+    this.rows.forEach(item => {
+        let temp = item.id;
+        item.id = item._id;
+        item._id = temp;
+    })
   }
 
-render()
-{
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
+  columns = [
+    {field: 'id', headerName: 'ID', width: 230},
+    {field: 'ServerUpTime', headerName: 'ServerUpTime', width: 130},
+    {field: 'SystemUpTime', headerName: 'SystemUpTime', width: 130},
+    {field: 'LocalDate', headerName: 'LocalDate', width: 200},
+    {field: 'MemoryUsage', headerName: 'Memory Usage(%)', width:130},
+    {field: 'CPU_Usage', headerName: 'CPU Usage(%)', width: 130}
+  ];
+
+  DataTable()
+  {
+    return(
+        <div style={{ height: 370, width: '85%'}}>
+            <DataGrid
+            rows = {this.rows}
+            columns = {this.columns}
+            pageSize = {5}
+            rowsPerPageOptions= {[5]}
+            />
+        </div>
+    );
+  }
+
+  render()
+  {
+    return (
+      <div className="App">
+        <header className="App-header">
+        <p>Super Cool Website Display</p>
+
+
+        {this.DataTable()}
+
+
         <p>
-          Edit <code>src/App.js</code> and save to reload.
+          Most Recent Server Ping:
         </p>
-        <p> ServerUpTime: {this.state.ServerUpTime} </p>
-        <p> SystemUpTime: {this.state.SystemUpTime} </p>
+        <p> ServerUpTime: {this.state.ServerUpTime}, SystemUpTime: {this.state.SystemUpTime}</p>
         <p> Local Date/Time: {this.state.LocalDate} </p>
-        <p> Memory Usage: {this.state.MemoryUsage}% </p>
-        <p> CPU Usage: {this.state.CPU_Usage}% </p>
+        <p> Memory Usage: {this.state.MemoryUsage}%, CPU Usage: {this.state.CPU_Usage}%</p>
       </header>
     </div>
-  );
-}
+    );
+  }
 }
 
 
