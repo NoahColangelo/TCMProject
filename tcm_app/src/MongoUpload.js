@@ -45,7 +45,7 @@ app.get("/A", (req, res) => {
 });
 
 app.get("/B", (req, res) => {
-    RetreiveDocuments(client, 20);
+    RetreiveDocuments(client, 100);
     //console.log(data);
     res.json(data);
     console.log('sent array of data');

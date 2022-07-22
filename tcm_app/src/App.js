@@ -1,13 +1,9 @@
 import React from 'react';
-import logo from './logo.svg';
 import './App.css';
-
-//import * as React from 'react';
 import {DataGrid} from '@mui/x-data-grid';
 
 class App extends React.Component
 {
-
   constructor(props)
   {
     super(props);
@@ -19,11 +15,12 @@ class App extends React.Component
       CPU_Usage: "N/A"};
   }
 
-  componentDidMount()
+  componentDidMount()//gets called twice?
   {
     this.RetreiveB();
-    //this.FillRows();
-    this.RetreiveData();
+    this.RetreiveData();//calls it once before the interval so state is not empty
+
+    //minute interval to call retreive data function
     this.requestTimer = setInterval(() => {this.RetreiveData();}, 60000);
   }
 
@@ -32,6 +29,7 @@ class App extends React.Component
     clearInterval(this.requestTimer);
   }
 
+  //gets the most recent upload to mongo for display
   RetreiveData = async () => {
     const res = await fetch('http://localhost:3001/A');
     const json = await res.json();
@@ -43,16 +41,17 @@ class App extends React.Component
     this.state.CPU_Usage = json.CPU_Usage;
 
     this.setState({state: this.state});
-    //console.log(json);
     return json;
   }
 
   rows = [];
 
+  //fills the rows of the table with data from mongodb
   RetreiveB = async () => {
     const res = await fetch('http://localhost:3001/B');
     this.rows = await res.json();
 
+    //changes mongos '_id' to 'id' so the table can read it
     this.rows.forEach(item => {
         let temp = item.id;
         item.id = item._id;
@@ -69,11 +68,12 @@ class App extends React.Component
     {field: 'CPU_Usage', headerName: 'CPU Usage(%)', width: 130}
   ];
 
+  //renders the table
   DataTable()
   {
     return(
-        <div style={{ height: 370, width: '85%'}}>
-            <DataGrid
+        <div style={{ height: 380, width: '90%'}}>
+            <DataGrid sx={{boxShadow: 5, color: 'white'}}
             rows = {this.rows}
             columns = {this.columns}
             pageSize = {5}
@@ -89,11 +89,7 @@ class App extends React.Component
       <div className="App">
         <header className="App-header">
         <p>Super Cool Website Display</p>
-
-
         {this.DataTable()}
-
-
         <p>
           Most Recent Server Ping:
         </p>
@@ -105,7 +101,5 @@ class App extends React.Component
     );
   }
 }
-
-
 
 export default App;
