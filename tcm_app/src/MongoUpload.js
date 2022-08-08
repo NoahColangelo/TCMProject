@@ -44,14 +44,17 @@ app.get("/A", (req, res) => {
     console.log('sent data');
 });
 
+let numOfDocs = 50;
+let skipDocsNum = 0;
+
 app.get("/B", (req, res) => {
-    RetreiveDocuments(client, 100);
+    RetreiveDocuments(client, numOfDocs, skipDocsNum);
     //console.log(data);
     res.json(data);
     console.log('sent array of data');
 });
 
-RetreiveDocuments(client, 5);//calls it before to fill data
+RetreiveDocuments(client, numOfDocs, skipDocsNum);//calls it before to fill data
 main();
 setInterval(main, 60000);
 

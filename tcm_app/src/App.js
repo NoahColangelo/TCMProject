@@ -1,4 +1,4 @@
-import React from 'react';
+import * as React from 'react';
 import './App.css';
 import {DataGrid} from '@mui/x-data-grid';
 
@@ -8,20 +8,23 @@ class App extends React.Component
   {
     super(props);
 
-    this.state = {ServerUpTime: "N/A",
+    this.state = {
+      ServerUpTime: "N/A",
       SystemUpTime: "N/A",
       LocalDate: "N/A",
       MemoryUsage: "N/A",
-      CPU_Usage: "N/A"};
+      CPU_Usage: "N/A",
+      
+      pageSize: 5};
   }
 
   componentDidMount()//gets called twice?
   {
-    this.RetreiveB();
-    this.RetreiveData();//calls it once before the interval so state is not empty
+    this.RetreiveTableData();
+    this.RetreiveServerPing();//calls it once before the interval so state is not empty
 
     //minute interval to call retreive data function
-    this.requestTimer = setInterval(() => {this.RetreiveData();}, 60000);
+    this.requestTimer = setInterval(() => {this.RetreiveServerPing();}, 60000);
   }
 
   componentWillUnmount()
@@ -29,8 +32,14 @@ class App extends React.Component
     clearInterval(this.requestTimer);
   }
 
+  setPageSize(newpageNum)
+  {
+    this.state.pageSize = newpageNum;
+    console.log(this.state.pageSize);
+  }
+
   //gets the most recent upload to mongo for display
-  RetreiveData = async () => {
+  RetreiveServerPing = async () => {
     const res = await fetch('http://localhost:3001/A');
     const json = await res.json();
 
@@ -47,7 +56,7 @@ class App extends React.Component
   rows = [];
 
   //fills the rows of the table with data from mongodb
-  RetreiveB = async () => {
+  RetreiveTableData = async () => {
     const res = await fetch('http://localhost:3001/B');
     this.rows = await res.json();
 
@@ -74,10 +83,12 @@ class App extends React.Component
     return(
         <div style={{ height: 380, width: '90%'}}>
             <DataGrid sx={{boxShadow: 5, color: 'white'}}
+            pageSize = {this.state.pageSize}S
+            onPageSizeChange = {(newPageSize) => this.setState({pageSize:newPageSize})}
+            rowsPerPageOptions= {[5, 10, 25]}
+            pagination
             rows = {this.rows}
             columns = {this.columns}
-            pageSize = {5}
-            rowsPerPageOptions= {[5]}
             />
         </div>
     );
