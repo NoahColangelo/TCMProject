@@ -1,6 +1,7 @@
 import * as React from 'react';
 import './App.css';
 import {DataGrid} from '@mui/x-data-grid';
+//import data from './DataTable.js';
 
 class App extends React.Component
 {
@@ -15,13 +16,28 @@ class App extends React.Component
       MemoryUsage: "N/A",
       CPU_Usage: "N/A",
       
-      pageSize: 5};
+      rowSize: 5,
+      currentPage:0};
   }
+
+  rows = [];
+  docNum = 0;
+
+  columns = [
+    {field: 'id', headerName: 'ID', width: 230},
+    {field: 'ServerUpTime', headerName: 'ServerUpTime', width: 130},
+    {field: 'SystemUpTime', headerName: 'SystemUpTime', width: 130},
+    {field: 'LocalDate', headerName: 'LocalDate', width: 200},
+    {field: 'MemoryUsage', headerName: 'Memory Usage(%)', width:130},
+    {field: 'CPU_Usage', headerName: 'CPU Usage(%)', width: 130}
+  ];
 
   componentDidMount()//gets called twice?
   {
-    this.RetreiveTableData();
+    //this.RetreiveTableData();
+    this.HandlePageChange(0);
     this.RetreiveServerPing();//calls it once before the interval so state is not empty
+    this.RetrieveNumOfDocs();
 
     //minute interval to call retreive data function
     this.requestTimer = setInterval(() => {this.RetreiveServerPing();}, 60000);
@@ -30,12 +46,6 @@ class App extends React.Component
   componentWillUnmount()
   {
     clearInterval(this.requestTimer);
-  }
-
-  setPageSize(newpageNum)
-  {
-    this.state.pageSize = newpageNum;
-    console.log(this.state.pageSize);
   }
 
   //gets the most recent upload to mongo for display
@@ -53,8 +63,6 @@ class App extends React.Component
     return json;
   }
 
-  rows = [];
-
   //fills the rows of the table with data from mongodb
   RetreiveTableData = async () => {
     const res = await fetch('http://localhost:3001/B');
@@ -68,14 +76,43 @@ class App extends React.Component
     })
   }
 
-  columns = [
-    {field: 'id', headerName: 'ID', width: 230},
-    {field: 'ServerUpTime', headerName: 'ServerUpTime', width: 130},
-    {field: 'SystemUpTime', headerName: 'SystemUpTime', width: 130},
-    {field: 'LocalDate', headerName: 'LocalDate', width: 200},
-    {field: 'MemoryUsage', headerName: 'Memory Usage(%)', width:130},
-    {field: 'CPU_Usage', headerName: 'CPU Usage(%)', width: 130}
-  ];
+  RetrieveNumOfDocs = async () => {
+    const res = await fetch('http://localhost:3001/D');
+    this.docNum = await res.json();
+    console.log(this.docNum);
+  }
+
+  HandleRowSizeChange(newRowNum)
+  {
+    this.setState({rowSize:newRowNum});
+
+  }
+
+  HandlePageChange = async (newPageNum) =>
+  {
+    this.setState({currentPage:newPageNum});
+
+    const res = await fetch('http://localhost:3001/C',{
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        DocNum: (this.state.rowSize),
+        SkipNum: (this.state.rowSize * newPageNum)
+    })
+    })
+
+    this.rows = await res.json();
+    //changes mongos '_id' to 'id' so the table can read it
+    this.rows.forEach(item => {
+        let temp = item.id;
+        item.id = item._id;
+        item._id = temp;
+    })
+
+    await console.log(this.rows);
+  }
 
   //renders the table
   DataTable()
@@ -83,10 +120,19 @@ class App extends React.Component
     return(
         <div style={{ height: 380, width: '90%'}}>
             <DataGrid sx={{boxShadow: 5, color: 'white'}}
-            pageSize = {this.state.pageSize}S
-            onPageSizeChange = {(newPageSize) => this.setState({pageSize:newPageSize})}
+
+            page = {this.state.currentPage}
+            onPageChange = {(newPage) => this.HandlePageChange(newPage)}
+
+            pageSize = {this.state.rowSize}
+            onPageSizeChange = {(newPageSize) => this.setState({rowSize:newPageSize})}
+            
+            rowCount = {this.docNum}
             rowsPerPageOptions= {[5, 10, 25]}
+
             pagination
+            paginationMode='server'
+
             rows = {this.rows}
             columns = {this.columns}
             />

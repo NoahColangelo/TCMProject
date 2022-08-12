@@ -2,7 +2,7 @@ const {MongoClient} = require('mongodb');
 var snmp = require ("net-snmp");
 const express = require('express');
 const cors = require('cors');
-
+const bodyParser = require('body-parser');
 //Mongo Variables
 const url = "mongodb+srv://Noah:BongoMongo321@tcmcluster.wmrfz.mongodb.net/TCM_Data?retryWrites=true&w=majority";
 const client = new MongoClient(url);
@@ -24,12 +24,16 @@ var oids = ["1.3.6.1.2.1.1.3.0",// server upTime
 var infoSend = [];
 //------------------
 
-
 const app = express();
 app.use(cors());
 const port = process.env.port || 3001;
 
 var data = undefined;
+
+let docNum = 0;
+
+let numOfDocs = 5;
+let skipDocsNum = 0;
 
 app.listen(port, () => {
     console.log('app listening on port: ' + port);
@@ -44,15 +48,24 @@ app.get("/A", (req, res) => {
     console.log('sent data');
 });
 
-let numOfDocs = 50;
-let skipDocsNum = 0;
-
 app.get("/B", (req, res) => {
     RetreiveDocuments(client, numOfDocs, skipDocsNum);
-    //console.log(data);
     res.json(data);
     console.log('sent array of data');
 });
+
+app.post("/C", bodyParser.json(), (req, res) =>{
+    console.log(req.body.DocNum, req.body.SkipNum);
+    RetreiveDocuments(client, req.body.DocNum, req.body.SkipNum);
+    res.json(data);
+    //console.log(data);
+});
+
+app.get("/D", (req, res) => {
+    GetTotalDocNum();
+    console.log(docNum);
+    res.json(docNum);
+})
 
 RetreiveDocuments(client, numOfDocs, skipDocsNum);//calls it before to fill data
 main();
@@ -60,7 +73,8 @@ setInterval(main, 60000);
 
 function main()
 {
-    serverCall();
+    //serverCall();
+    GetTotalDocNum();
 }
 
 function serverCall()
@@ -144,9 +158,13 @@ function createNewDocument(client, newDocument)
     console.log(newDocument);
 }
 
-async function RetreiveDocuments(client, numOfDocs, dbIndex = 0)
+async function RetreiveDocuments(client, numOfDocs, dbIndex)
 {
     const cursor= client.db("TCM_Data").collection("system_stats").find().limit(numOfDocs).skip(dbIndex);
     data = await cursor.toArray();
-    //return results;
+}
+
+async function GetTotalDocNum()
+{
+    docNum = await client.db("TCM_Data").collection("system_stats").countDocuments();
 }
