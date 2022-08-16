@@ -28,9 +28,8 @@ const app = express();
 app.use(cors());
 const port = process.env.port || 3001;
 
-var data = undefined;
-
 let docNum = 0;
+var data = undefined;
 
 let numOfDocs = 5;
 let skipDocsNum = 0;
@@ -45,25 +44,27 @@ app.get("/A", (req, res) => {
               LocalDate: infoSend.localDateTime,
               MemoryUsage: infoSend.memUsage,
               CPU_Usage: infoSend.cpuUsage});
-    console.log('sent data');
+    //console.log('sent data');
 });
 
+//not used anymore
 app.get("/B", (req, res) => {
     RetreiveDocuments(client, numOfDocs, skipDocsNum);
     res.json(data);
     console.log('sent array of data');
 });
 
-app.post("/C", bodyParser.json(), (req, res) =>{
+//used for send required docs to the front end
+app.post("/C", bodyParser.json(), async  (req, res) =>{
     console.log(req.body.DocNum, req.body.SkipNum);
-    RetreiveDocuments(client, req.body.DocNum, req.body.SkipNum);
+    await RetreiveDocuments(client, req.body.DocNum, req.body.SkipNum);
     res.json(data);
-    //console.log(data);
+    console.log("data sent", data[0]);
 });
 
 app.get("/D", (req, res) => {
     GetTotalDocNum();
-    console.log(docNum);
+    //console.log(docNum);
     res.json(docNum);
 })
 

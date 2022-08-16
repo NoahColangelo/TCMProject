@@ -16,11 +16,12 @@ class App extends React.Component
       MemoryUsage: "N/A",
       CPU_Usage: "N/A",
       
+      rows: [],
       rowSize: 5,
       currentPage:0};
   }
 
-  rows = [];
+  
   docNum = 0;
 
   columns = [
@@ -34,11 +35,10 @@ class App extends React.Component
 
   componentDidMount()//gets called twice?
   {
-    //this.RetreiveTableData();
     this.HandlePageChange(0);
-    this.RetreiveServerPing();//calls it once before the interval so state is not empty
     this.RetrieveNumOfDocs();
 
+    this.RetreiveServerPing();//calls it once before the interval so state is not empty
     //minute interval to call retreive data function
     this.requestTimer = setInterval(() => {this.RetreiveServerPing();}, 60000);
   }
@@ -53,39 +53,72 @@ class App extends React.Component
     const res = await fetch('http://localhost:3001/A');
     const json = await res.json();
 
-    this.state.ServerUpTime = json.ServerUpTime;
-    this.state.SystemUpTime = json.SystemUpTime;
-    this.state.LocalDate = json.LocalDate;
-    this.state.MemoryUsage = json.MemoryUsage;
-    this.state.CPU_Usage = json.CPU_Usage;
+    this.setState({ServerUpTime:json.ServerUpTime});
+    this.setState({SystemUpTime:json.SystemUpTime});
+    this.setState({LocalDate:json.LocalDate});
+    this.setState({MemoryUsage:json.MemoryUsage});
+    this.setState({CPU_Usage:json.CPU_Usage});
 
-    this.setState({state: this.state});
-    return json;
+    //this.state.ServerUpTime = json.ServerUpTime;
+    //this.state.SystemUpTime = json.SystemUpTime;
+    //this.state.LocalDate = json.LocalDate;
+    //this.state.MemoryUsage = json.MemoryUsage;
+    //this.state.CPU_Usage = json.CPU_Usage;
+    //this.setState({state: this.state});
+    //return json;
   }
 
   //fills the rows of the table with data from mongodb
   RetreiveTableData = async () => {
     const res = await fetch('http://localhost:3001/B');
-    this.rows = await res.json();
+    const tempRows = await res.json();
 
     //changes mongos '_id' to 'id' so the table can read it
-    this.rows.forEach(item => {
+    tempRows.forEach(item => {
         let temp = item.id;
         item.id = item._id;
         item._id = temp;
     })
+
+    this.setState({rows:tempRows});
   }
 
   RetrieveNumOfDocs = async () => {
     const res = await fetch('http://localhost:3001/D');
     this.docNum = await res.json();
-    console.log(this.docNum);
+    //console.log(this.docNum);
   }
 
-  HandleRowSizeChange(newRowNum)
+  HandleRowSizeChange = async (newRowNum) =>
   {
     this.setState({rowSize:newRowNum});
+    this.setState({currentPage:0});
 
+    const res = await fetch('http://localhost:3001/C',{
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        DocNum: (newRowNum),
+        SkipNum: (0)
+    })
+    })
+
+    const tempRows = await res.json();
+
+    //changes mongos '_id' to 'id' so the table can read it
+    tempRows.forEach(item => {
+        let temp = item.id;
+        item.id = item._id;
+        item._id = temp;
+    })
+
+    //this.setState({rows:tempRows});
+    this.setState((state) => {
+      return{rows:tempRows}
+    });
+    console.log(this.state.rows);
   }
 
   HandlePageChange = async (newPageNum) =>
@@ -103,15 +136,20 @@ class App extends React.Component
     })
     })
 
-    this.rows = await res.json();
+    const tempRows = await res.json();
+
     //changes mongos '_id' to 'id' so the table can read it
-    this.rows.forEach(item => {
+    tempRows.forEach(item => {
         let temp = item.id;
         item.id = item._id;
         item._id = temp;
     })
 
-    await console.log(this.rows);
+    console.log(tempRows[0]);
+    //this.setState({rows:tempRows});
+    this.setState((state) => {
+      return{rows:tempRows}
+    });
   }
 
   //renders the table
@@ -125,7 +163,7 @@ class App extends React.Component
             onPageChange = {(newPage) => this.HandlePageChange(newPage)}
 
             pageSize = {this.state.rowSize}
-            onPageSizeChange = {(newPageSize) => this.setState({rowSize:newPageSize})}
+            onPageSizeChange = {(newPageSize) => this.HandleRowSizeChange(newPageSize)}
             
             rowCount = {this.docNum}
             rowsPerPageOptions= {[5, 10, 25]}
@@ -133,7 +171,7 @@ class App extends React.Component
             pagination
             paginationMode='server'
 
-            rows = {this.rows}
+            rows = {this.state.rows}
             columns = {this.columns}
             />
         </div>
