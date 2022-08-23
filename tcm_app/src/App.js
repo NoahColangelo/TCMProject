@@ -11,19 +11,26 @@ class App extends React.Component
     super(props);
 
     this.state = {
+      //for the server ping
       ServerUpTime: "N/A",
       SystemUpTime: "N/A",
       LocalDate: "N/A",
       MemoryUsage: "N/A",
       CPU_Usage: "N/A",
       
+      //for the data table
       rows: [],
       rowSize: 5,
-      currentPage:0,
+      currentPage: 0,
 
+      //for the graphs
       memGraphData: [],
       CPUGraphData: [],
-      timeDateGraphData: []
+      timeDateGraphData: [],
+
+      //graph options
+      memUsageOptions: 0,
+      CPU_UsageOptions: 0
     };
   }
 
@@ -44,7 +51,9 @@ class App extends React.Component
     this.RetrieveNumOfDocs();
     this.RetreiveGraphData();
 
-    this.RetreiveServerPing();//calls it once before the interval so state is not empty
+    //calls it once before the interval so state is not empty
+    this.RetreiveServerPing();
+
     //minute interval to call retreive data function
     this.requestTimer = setInterval(() => {this.RetreiveServerPing();}, 60000);
   }
@@ -66,17 +75,15 @@ class App extends React.Component
     this.setState({CPU_Usage:json.CPU_Usage});
   }
 
-  //fills the rows of the table with data from mongodb
+  //gets the data needed to fill the graphs
   RetreiveGraphData = async () => {
     const res = await fetch('http://localhost:3001/B');
     const tempData = await res.json();
 
-    //clears data from charts
     let tempMem = [];
     let tempCPU = [];
     let tempDate = [];
 
-  
     for(let i = 0; i < tempData.length; i++)
     {
       tempMem.push(parseInt(tempData[i].MemoryUsage));
@@ -84,18 +91,16 @@ class App extends React.Component
       tempDate.push(tempData[i].LocalDate);
     }
 
-    //this.setState({memGraphData:tempMem});
+    this.setState({memGraphData:tempMem});
+    this.setState({CPUGraphData:tempCPU});
+    this.setState({timeDateGraphData: tempDate});
 
-    //this.randomData2 = [this.memGraphData[0],this.memGraphData[1], this.memGraphData[2]];
-
-    //this.memGraphData = this.memGraphData.map(Number);
-    ////////console.log(this.memGraphData);
+    this.SetGraphOptions();
   }
 
   RetrieveNumOfDocs = async () => {
     const res = await fetch('http://localhost:3001/D');
     this.docNum = await res.json();
-    //console.log(this.docNum);
   }
 
   HandleRowSizeChange = async (newRowNum) =>
@@ -123,7 +128,6 @@ class App extends React.Component
         item._id = temp;
     })
 
-    //this.setState({rows:tempRows});
     this.setState((state) => {
       return{rows:tempRows}
     });
@@ -153,10 +157,65 @@ class App extends React.Component
         item._id = temp;
     })
 
-    //this.setState({rows:tempRows});
     this.setState((state) => {
       return{rows:tempRows}
     });
+  }
+
+  SetGraphOptions()
+  {
+    this.setState({memUsageOptions:{
+      chart: {
+        width: 1000
+      },
+      plotOptions:{
+      series: {turboThreshold: 1000 },
+      line: {turboThreshold: 1000}
+      },
+      series: [
+      {
+        name: 'Memory Usage',
+        data: this.state.memGraphData
+      }],
+      title: {
+        text: 'Memory Usage vs LocalDate/Time'
+      },
+      xAxis: {
+        title: { text: 'LocalDate/Time'},
+        categories: this.state.timeDateGraphData,
+        tickInterval: 50
+      },
+      yAxis: {
+        title:{ text:'Memory Usage (%)'},
+      }
+    }});
+
+    this.setState({CPU_UsageOptions: {
+      chart: {
+        width: 1000
+      },
+      plotOptions:{
+        series: {turboThreshold: 1000 },
+        line: {turboThreshold: 1000}
+      },
+      series: [
+      {
+        name: 'CPU_Usage',
+        data: this.state.CPUGraphData
+      }],
+      title: {
+        text: 'CPU_Usage vs LocalDate/Time'
+      },
+      xAxis: {
+        title: { text: 'LocalDate/Time'},
+        categories: this.state.timeDateGraphData,
+        tickInterval: 50
+      },
+      yAxis: {
+        title:{ text:'CPU Usage (%)'},
+        max: 100
+      }
+    }});
   }
 
   //renders the table
@@ -184,53 +243,6 @@ class App extends React.Component
         </div>
     );
   }
-  randomData = [1,2,3,4,5,6,7,8,9,0];
-  randomData2 = [];
-
-
-  memUsageOptions = {
-    chart: {
-      width: 1000
-    },
-    plotOptions:{
-    series: {turboThreshold: 1000 },
-    line: {turboThreshold: 1000}
-    },
-    series: [
-    {
-      name: 'Memory Usage',
-      data: this.state.memGraphData
-    }],
-    title: {
-      text: 'Memory Usage vs LocalDate/Time'
-    },
-    xAxis: {
-      title: { text: 'LocalDate/Time'}
-    },
-    yAxis: {
-      title:{ text:'Memory Usage (%)'}
-    }
-  };
-
-  CPU_UsageOptions = {
-    chart: {
-      width: 1000
-    },
-    series: [
-      {
-        name: 'CPU_Usage',
-        data: this.state.CPUGraphData
-      }],
-      title: {
-        text: 'CPU_Usage vs LocalDate/Time'
-      },
-      xAxis: {
-        title: { text: 'LocalDate/Time'}
-      },
-      yAxis: {
-        title:{ text:'CPU Usage (%)'}
-      }
-  };
 
   render()
   {
@@ -246,9 +258,10 @@ class App extends React.Component
         <p> Local Date/Time: {this.state.LocalDate} </p>
         <p> Memory Usage: {this.state.MemoryUsage}%, CPU Usage: {this.state.CPU_Usage}%</p>
 
-        <HighchartsReact highcharts = {Highcharts} options={this.memUsageOptions} />
+        <HighchartsReact highcharts = {Highcharts} options={this.state.memUsageOptions} />
         <p> </p>
-        <HighchartsReact highcharts = {Highcharts} options={this.CPU_UsageOptions} />
+        <HighchartsReact highcharts = {Highcharts} options={this.state.CPU_UsageOptions} />
+        <p> </p>
 
       </header>
     </div>

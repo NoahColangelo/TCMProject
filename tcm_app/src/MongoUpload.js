@@ -3,12 +3,11 @@ var snmp = require ("net-snmp");
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
-//Mongo Variables
+//------------------------------------------------------
+
 const url = "mongodb+srv://Noah:BongoMongo321@tcmcluster.wmrfz.mongodb.net/TCM_Data?retryWrites=true&w=majority";
 const client = new MongoClient(url);
-//---------------
 
-//SNMP Variables
 //var session = snmp.createSession ("127.0.0.1", "alpha");
 var session = snmp.createSession ("127.0.0.1", "beta");
 
@@ -31,9 +30,6 @@ const port = process.env.port || 3001;
 let docNum = 0;
 var tableData = undefined;
 var graphData = undefined;
-
-//let numOfDocs = 5;
-//let skipDocsNum = 0;
 
 app.listen(port, () => {
     console.log('app listening on port: ' + port);
@@ -68,7 +64,6 @@ app.get("/D", async (req, res) => {
 })
 
 docNum = GetTotalDocNum();
-//RetreiveDocuments(client, numOfDocs, skipDocsNum);//calls it before to fill data
 main();
 setInterval(main, 60000);
 
@@ -146,9 +141,6 @@ function serverCall()
                 CPU_Usage: infoSend.cpuUsage
     
             });
-
-
-        //session.close();
     });
 }
 
@@ -171,15 +163,6 @@ async function RetreiveAllDocuments(client)
     const cursor= client.db("TCM_Data").collection("system_stats").find({});
     const cursorArray = await cursor.toArray();
     return cursorArray;
-    //let neededGraphData = [];
-
-    //for(let i = 0; i < cursorArray.length; i++)
-    //{
-        //let temp = [cursorArray[i].LocalDateTime, cursorArray[i].memUsage, cursorArray[i].cpuUsage];
-        //neededGraphData.push(temp);
-    //}
-
-    //return neededGraphData;
 }
 
 async function GetTotalDocNum()
