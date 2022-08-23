@@ -29,53 +29,53 @@ app.use(cors());
 const port = process.env.port || 3001;
 
 let docNum = 0;
-var data = undefined;
+var tableData = undefined;
+var graphData = undefined;
 
-let numOfDocs = 5;
-let skipDocsNum = 0;
+//let numOfDocs = 5;
+//let skipDocsNum = 0;
 
 app.listen(port, () => {
     console.log('app listening on port: ' + port);
 });
 
+//used to send the most recent stored document to the front end
 app.get("/A", (req, res) => {
     res.send({ServerUpTime: infoSend.servUpTimeSeconds,
               SystemUpTime: infoSend.compUpTimeSeconds,
               LocalDate: infoSend.localDateTime,
               MemoryUsage: infoSend.memUsage,
               CPU_Usage: infoSend.cpuUsage});
-    //console.log('sent data');
 });
 
-//not used anymore
-app.get("/B", (req, res) => {
-    RetreiveDocuments(client, numOfDocs, skipDocsNum);
-    res.json(data);
-    console.log('sent array of data');
+//used to send all docs from mongo to the graphs for display
+app.get("/B", async (req, res) => {
+    graphData = await RetreiveAllDocuments(client);
+    res.json(graphData);
 });
 
-//used for send required docs to the front end
+//used for send required docs to the front end to display
 app.post("/C", bodyParser.json(), async  (req, res) =>{
     console.log(req.body.DocNum, req.body.SkipNum);
-    await RetreiveDocuments(client, req.body.DocNum, req.body.SkipNum);
-    res.json(data);
-    console.log("data sent", data[0]);
+    tableData = await RetreiveDocuments(client, req.body.DocNum, req.body.SkipNum);
+    res.json(tableData);
 });
 
-app.get("/D", (req, res) => {
-    GetTotalDocNum();
-    //console.log(docNum);
+//used to send the number of documents in mongo
+app.get("/D", async (req, res) => {
+    docNum = await GetTotalDocNum();
     res.json(docNum);
 })
 
-RetreiveDocuments(client, numOfDocs, skipDocsNum);//calls it before to fill data
+docNum = GetTotalDocNum();
+//RetreiveDocuments(client, numOfDocs, skipDocsNum);//calls it before to fill data
 main();
 setInterval(main, 60000);
 
 function main()
 {
     //serverCall();
-    GetTotalDocNum();
+    //GetTotalDocNum();
 }
 
 function serverCall()
@@ -162,10 +162,28 @@ function createNewDocument(client, newDocument)
 async function RetreiveDocuments(client, numOfDocs, dbIndex)
 {
     const cursor= client.db("TCM_Data").collection("system_stats").find().limit(numOfDocs).skip(dbIndex);
-    data = await cursor.toArray();
+    const cursorArray = await cursor.toArray();
+    return cursorArray;
+}
+
+async function RetreiveAllDocuments(client)
+{
+    const cursor= client.db("TCM_Data").collection("system_stats").find({});
+    const cursorArray = await cursor.toArray();
+    return cursorArray;
+    //let neededGraphData = [];
+
+    //for(let i = 0; i < cursorArray.length; i++)
+    //{
+        //let temp = [cursorArray[i].LocalDateTime, cursorArray[i].memUsage, cursorArray[i].cpuUsage];
+        //neededGraphData.push(temp);
+    //}
+
+    //return neededGraphData;
 }
 
 async function GetTotalDocNum()
 {
-    docNum = await client.db("TCM_Data").collection("system_stats").countDocuments();
+    const totalDocNum = await client.db("TCM_Data").collection("system_stats").countDocuments();
+    return totalDocNum;
 }

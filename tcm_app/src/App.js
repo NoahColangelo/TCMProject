@@ -1,7 +1,8 @@
 import * as React from 'react';
 import './App.css';
 import {DataGrid} from '@mui/x-data-grid';
-//import data from './DataTable.js';
+import Highcharts from 'highcharts';
+import HighchartsReact from 'highcharts-react-official';
 
 class App extends React.Component
 {
@@ -18,10 +19,14 @@ class App extends React.Component
       
       rows: [],
       rowSize: 5,
-      currentPage:0};
+      currentPage:0,
+
+      memGraphData: [],
+      CPUGraphData: [],
+      timeDateGraphData: []
+    };
   }
 
-  
   docNum = 0;
 
   columns = [
@@ -37,6 +42,7 @@ class App extends React.Component
   {
     this.HandlePageChange(0);
     this.RetrieveNumOfDocs();
+    this.RetreiveGraphData();
 
     this.RetreiveServerPing();//calls it once before the interval so state is not empty
     //minute interval to call retreive data function
@@ -58,29 +64,32 @@ class App extends React.Component
     this.setState({LocalDate:json.LocalDate});
     this.setState({MemoryUsage:json.MemoryUsage});
     this.setState({CPU_Usage:json.CPU_Usage});
-
-    //this.state.ServerUpTime = json.ServerUpTime;
-    //this.state.SystemUpTime = json.SystemUpTime;
-    //this.state.LocalDate = json.LocalDate;
-    //this.state.MemoryUsage = json.MemoryUsage;
-    //this.state.CPU_Usage = json.CPU_Usage;
-    //this.setState({state: this.state});
-    //return json;
   }
 
   //fills the rows of the table with data from mongodb
-  RetreiveTableData = async () => {
+  RetreiveGraphData = async () => {
     const res = await fetch('http://localhost:3001/B');
-    const tempRows = await res.json();
+    const tempData = await res.json();
 
-    //changes mongos '_id' to 'id' so the table can read it
-    tempRows.forEach(item => {
-        let temp = item.id;
-        item.id = item._id;
-        item._id = temp;
-    })
+    //clears data from charts
+    let tempMem = [];
+    let tempCPU = [];
+    let tempDate = [];
 
-    this.setState({rows:tempRows});
+  
+    for(let i = 0; i < tempData.length; i++)
+    {
+      tempMem.push(parseInt(tempData[i].MemoryUsage));
+      tempCPU.push(tempData[i].CPU_Usage);
+      tempDate.push(tempData[i].LocalDate);
+    }
+
+    //this.setState({memGraphData:tempMem});
+
+    //this.randomData2 = [this.memGraphData[0],this.memGraphData[1], this.memGraphData[2]];
+
+    //this.memGraphData = this.memGraphData.map(Number);
+    ////////console.log(this.memGraphData);
   }
 
   RetrieveNumOfDocs = async () => {
@@ -118,7 +127,6 @@ class App extends React.Component
     this.setState((state) => {
       return{rows:tempRows}
     });
-    console.log(this.state.rows);
   }
 
   HandlePageChange = async (newPageNum) =>
@@ -145,7 +153,6 @@ class App extends React.Component
         item._id = temp;
     })
 
-    console.log(tempRows[0]);
     //this.setState({rows:tempRows});
     this.setState((state) => {
       return{rows:tempRows}
@@ -177,6 +184,53 @@ class App extends React.Component
         </div>
     );
   }
+  randomData = [1,2,3,4,5,6,7,8,9,0];
+  randomData2 = [];
+
+
+  memUsageOptions = {
+    chart: {
+      width: 1000
+    },
+    plotOptions:{
+    series: {turboThreshold: 1000 },
+    line: {turboThreshold: 1000}
+    },
+    series: [
+    {
+      name: 'Memory Usage',
+      data: this.state.memGraphData
+    }],
+    title: {
+      text: 'Memory Usage vs LocalDate/Time'
+    },
+    xAxis: {
+      title: { text: 'LocalDate/Time'}
+    },
+    yAxis: {
+      title:{ text:'Memory Usage (%)'}
+    }
+  };
+
+  CPU_UsageOptions = {
+    chart: {
+      width: 1000
+    },
+    series: [
+      {
+        name: 'CPU_Usage',
+        data: this.state.CPUGraphData
+      }],
+      title: {
+        text: 'CPU_Usage vs LocalDate/Time'
+      },
+      xAxis: {
+        title: { text: 'LocalDate/Time'}
+      },
+      yAxis: {
+        title:{ text:'CPU Usage (%)'}
+      }
+  };
 
   render()
   {
@@ -191,6 +245,11 @@ class App extends React.Component
         <p> ServerUpTime: {this.state.ServerUpTime}, SystemUpTime: {this.state.SystemUpTime}</p>
         <p> Local Date/Time: {this.state.LocalDate} </p>
         <p> Memory Usage: {this.state.MemoryUsage}%, CPU Usage: {this.state.CPU_Usage}%</p>
+
+        <HighchartsReact highcharts = {Highcharts} options={this.memUsageOptions} />
+        <p> </p>
+        <HighchartsReact highcharts = {Highcharts} options={this.CPU_UsageOptions} />
+
       </header>
     </div>
     );
